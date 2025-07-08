@@ -1,25 +1,44 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <title>Adminbereich</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <h1>🔧 Adminbereich</h1>
-  <form id="adminForm">
-    <div>
-      <label>Team Alpha: <input type="number" name="Team Alpha" min="0"></label>
-    </div>
-    <div>
-      <label>Team Beta: <input type="number" name="Team Beta" min="0"></label>
-    </div>
-    <div>
-      <label>Team Gamma: <input type="number" name="Team Gamma" min="0"></label>
-    </div>
-    <button type="submit">Speichern</button>
-  </form>
+/* Add your admin area styles below */
 
-  <script src="script.js"></script>
-</body>
-</html>
+body {
+  font-family: Arial, sans-serif;
+  background: #f8f8f8;
+  margin: 0;
+  padding: 2rem;
+}
+
+h1 {
+  color: #333;
+}
+
+form {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+form div {
+  margin-bottom: 1rem;
+}
+
+label {
+  font-weight: bold;
+}
+
+input[type="number"] {
+  margin-left: 0.5rem;
+  width: 60px;
+}
+
+button[type="submit"] {
+  background: #0078d4;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
