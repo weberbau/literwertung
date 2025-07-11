@@ -1,53 +1,73 @@
 import { useEffect, useState } from "react";
-import { db, auth } from "./firebase";
-import { ref, onValue, set } from "firebase/database";
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { db, auth } from "../firebase";
+import {
+  ref,
+  onValue,
+  set,
+  get,
+  child
+} from "firebase/database";
+import {
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "firebase/auth";
 
 export default function Admin() {
-  const [teams, setTeams] = useState([]);
-  const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [user, setUser] = useState(null);
+  const [teams, setTeams] = useState([]);
+  const [beerInputs, setBeerInputs] = useState({});
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
     });
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (user) {
       const teamsRef = ref(db, "teams");
-      const unsubscribeData = onValue(teamsRef, (snapshot) => {
+      return onValue(teamsRef, (snapshot) => {
         const data = snapshot.val();
-        setTeams(data ? Object.values(data) : []);
+        if (data) {
+          setTeams(Object.values(data));
+        }
       });
-      return unsubscribeData;
     }
   }, [user]);
 
-  const handleLogin = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      alert("Login fehlgeschlagen: " + error.message);
-    }
+  const handleLogin = () => {
+    signInWithEmailAndPassword(auth, email, password).catch((err) =>
+      alert("Login fehlgeschlagen: " + err.message)
+    );
   };
 
   const handleLogout = () => {
     signOut(auth);
   };
 
-  const addBeer = (team) => {
-    const updatedTeam = { ...team, beers: (team.beers || 0) + 1 };
-    set(ref(db, `teams/${team.id}`), updatedTeam);
+  const handleAddBeers = (teamId) => {
+    const amount = parseInt(beerInputs[teamId] || "0", 10);
+    if (isNaN(amount)) return;
+
+    const teamRef = ref(db, `teams/${teamId}`);
+    get(teamRef).then((snapshot) => {
+      if (snapshot.exists()) {
+        const team = snapshot.val();
+        const newBeers = (team.beers || 0) + amount;
+        set(teamRef, { ...team, beers: newBeers });
+        setBeerInputs((prev) => ({ ...prev, [teamId]: "" }));
+      }
+    });
   };
 
   if (!user) {
     return (
       <div>
-        <h1>Admin Login</h1>
+        <h2>🔐 Admin Login</h2>
         <input
           type="email"
           placeholder="E-Mail"
@@ -71,12 +91,20 @@ export default function Admin() {
       <button onClick={handleLogout}>Logout</button>
       {teams.map((team) => (
         <div key={team.id} style={{ marginBottom: "10px" }}>
-          <span>
-            {team.name}: {team.beers} Liter
-          </span>
-          <button style={{ marginLeft: "10px" }} onClick={() => addBeer(team)}>
-            +1
-          </button>
+          <strong>{team.name}:</strong> {team.beers} 🍻
+          <input
+            type="number"
+            value={beerInputs[team.id] || ""}
+            onChange={(e) =>
+              setBeerInputs((prev) => ({
+                ...prev,
+                [team.id]: e.target.value,
+              }))
+            }
+            placeholder="+ Liter"
+            style={{ marginLeft: "10px", width: "60px" }}
+          />
+          <button onClick={() => handleAddBeers(team.id)}>Hinzufügen</button>
         </div>
       ))}
     </div>
