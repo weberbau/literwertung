@@ -1,53 +1,64 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { db, auth } from "./firebase";
+import { ref, onValue, set } from "firebase/database";
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 
-const ADMIN_PASSWORD = "HBK2025"; // <- hier dein Passwort eintragen
-
-export default function Admin({ teams, setTeams }) {
+export default function Admin() {
+  const [teams, setTeams] = useState([]);
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
 
-  // Eingabewerte pro Team
-  const [inputValues, setInputValues] = useState(
-    teams.reduce((acc, team) => {
-      acc[team.id] = "";
-      return acc;
-    }, {})
-  );
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return unsubscribe;
+  }, []);
 
-  const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-    } else {
-      alert("Falsches Passwort");
+  useEffect(() => {
+    if (user) {
+      const teamsRef = ref(db, "teams");
+      const unsubscribeData = onValue(teamsRef, (snapshot) => {
+        const data = snapshot.val();
+        setTeams(data ? Object.values(data) : []);
+      });
+      return unsubscribeData;
+    }
+  }, [user]);
+
+  const handleLogin = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      alert("Login fehlgeschlagen: " + error.message);
     }
   };
 
-  const handleInputChange = (id, value) => {
-    setInputValues((prev) => ({ ...prev, [id]: value }));
+  const handleLogout = () => {
+    signOut(auth);
   };
 
-  const handleAdd = (id) => {
-    const toAdd = parseInt(inputValues[id], 10);
-    if (!isNaN(toAdd)) {
-      setTeams((prev) =>
-        prev.map((team) =>
-          team.id === id ? { ...team, beers: team.beers + toAdd } : team
-        )
-      );
-      setInputValues((prev) => ({ ...prev, [id]: "" }));
-    }
+  const addBeer = (team) => {
+    const updatedTeam = { ...team, beers: (team.beers || 0) + 1 };
+    set(ref(db, `teams/${team.id}`), updatedTeam);
   };
 
-  if (!authenticated) {
+  if (!user) {
     return (
-      <div style={{ padding: 20 }}>
-        <h2>🔐 Admin Login</h2>
+      <div>
+        <h1>Admin Login</h1>
+        <input
+          type="email"
+          placeholder="E-Mail"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
         <input
           type="password"
-          placeholder="Passwort eingeben"
+          placeholder="Passwort"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{ marginRight: 10 }}
         />
         <button onClick={handleLogin}>Login</button>
       </div>
@@ -55,22 +66,16 @@ export default function Admin({ teams, setTeams }) {
   }
 
   return (
-    <div style={{ padding: 20 }}>
+    <div>
       <h1>🔧 Admin Bereich</h1>
+      <button onClick={handleLogout}>Logout</button>
       {teams.map((team) => (
         <div key={team.id} style={{ marginBottom: "10px" }}>
           <span>
-            {team.name}: {team.beers} 🍻
+            {team.name}: {team.beers} Liter
           </span>
-          <input
-            type="number"
-            placeholder="+ Bier"
-            value={inputValues[team.id] || ""}
-            onChange={(e) => handleInputChange(team.id, e.target.value)}
-            style={{ marginLeft: "10px", width: 60 }}
-          />
-          <button onClick={() => handleAdd(team.id)} style={{ marginLeft: 5 }}>
-            Hinzufügen
+          <button style={{ marginLeft: "10px" }} onClick={() => addBeer(team)}>
+            +1
           </button>
         </div>
       ))}
