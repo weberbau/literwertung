@@ -10,7 +10,7 @@ const firebaseConfig = {
   projectId: "literwertung",
   storageBucket: "literwertung.firebasestorage.app",
   messagingSenderId: "477094677262",
-  appId: "1:4770946772 62:web:c126a2d83698d6bd77a55f",
+  appId: "1:477094677262:web:c126a2d83698d6bd77a55f",
   measurementId: "G-8GH36XGVSD"
 };
 
