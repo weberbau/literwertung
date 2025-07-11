@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const ADMIN_PASSWORD = "deinGeheimesPasswort"; // <- hier dein Passwort eintragen
+const ADMIN_PASSWORD = "HBK2025"; // <- hier dein Passwort eintragen
 
 export default function Admin({ teams, setTeams }) {
   const [password, setPassword] = useState("");
